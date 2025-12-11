@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi Pegawai</title>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #eef5ff;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 450px;
+    background: #fff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    background: #f9fafb;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  #searchInput {
+    margin-top: 20px;
+  }
+
+  .absen-item {
+    padding: 12px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border-left: 5px solid #2563eb;
+    margin-bottom: 10px;
+  }
+
+  .nama {
+    font-weight: bold;
+  }
+
+  .foto-btn {
+    margin-top: 5px;
+    display: inline-block;
+    background: #1e40af;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+  }
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2 style="text-align:center;">ABSENSI PEGAWAI</h2>
+
+  <!-- FORM -->
+  <form id="absenForm">
+    <input type="text" id="nama" placeholder="Nama Pegawai" required>
+
+    <select id="status" required>
+      <option value="">Pilih Status</option>
+      <option value="Hadir">Hadir</option>
+      <option value="Tidak Hadir">Tidak Hadir</option>
+    </select>
+
+    <input type="file" id="foto" accept="image/*" required>
+
+    <button type="submit">Submit Absensi</button>
+  </form>
+
+  <!-- SEARCH -->
+  <input type="text" id="searchInput" placeholder="Cari nama pegawai...">
+
+  <h3>Daftar Absensi</h3>
+  <div id="absenList"></div>
+
+</div>
+
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbwQNu63yxi_PDEQXY5ngWacHRvN0VoBcYu6QjI2frtyX1mbbqByx45ax3AEIak";
+
+// SUBMIT ABSENSI
+document.getElementById("absenForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const nama = document.getElementById("nama").value;
+  const status = document.getElementById("status").value;
+  const fotoFile = document.getElementById("foto").files[0];
+
+  const reader = new FileReader();
+  reader.onloadend = async () => {
+    const fotoBase64 = reader.result;
+
+    const data = { nama, status, foto: fotoBase64 };
+
+    await fetch(scriptURL, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    alert("Absensi berhasil dikirim!");
+    loadAbsensi();
+    document.getElementById("absenForm").reset();
+  };
+
+  reader.readAsDataURL(fotoFile);
+});
+
+// LOAD ABSENSI
+async function loadAbsensi() {
+  const res = await fetch(scriptURL + "?read=1");
+  const data = await res.json();
+
+  const list = document.getElementById("absenList");
+  list.innerHTML = "";
+
+  data.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "absen-item";
+
+    div.innerHTML = `
+      <div class="nama">${item.nama}</div>
+      <div>Status: ${item.status}</div>
+      <div>Waktu: ${item.waktu}</div>
+      <a class="foto-btn" href="${item.foto}" target="_blank">Lihat Foto</a>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+loadAbsensi();
+
+// SEARCH FITUR
+document.getElementById("searchInput").addEventListener("keyup", function() {
+  const filter = this.value.toLowerCase();
+  const items = document.querySelectorAll(".absen-item");
+
+  items.forEach(item => {
+    const nama = item.querySelector(".nama").innerText.toLowerCase();
+    item.style.display = nama.includes(filter) ? "block" : "none";
+  });
+});
+</script>
+
+</body>
+</html>
